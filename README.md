@@ -69,8 +69,9 @@ Feel free to contribute to this project by improving the UI, adding features, or
 
 ## License
 
-This project is under the MIT License - see the `LICENSE` file for details.
+This project is licensed under the [GNU General Public License v3.0](LICENSE).
 
----
+## Acknowledgments
+This project is for educational purposes and to enhance your programming skills. Always ensure compliance with Hypixel's terms of service when using their API.
 
-**Note:** This project is for educational purposes and to enhance your programming skills. Always ensure compliance with Hypixel's terms of service when using their API.
+Support me or see my other projects: https://ko-fi.com/notfamous
