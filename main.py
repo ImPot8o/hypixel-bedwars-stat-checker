@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import requests
 
-API_KEY = "<ENTER YOUR API KEY>"
+API_KEY = "YOUR API KEY"
 BASE_URL = "https://api.hypixel.net/"
 
 
