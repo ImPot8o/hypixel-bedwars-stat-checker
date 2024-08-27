@@ -5,21 +5,21 @@ import requests
 API_KEY = "YOUR API KEY"
 BASE_URL = "https://api.hypixel.net/"
 
-
 def get_player_data(player_name):
+    headers = {
+        "API-Key": API_KEY
+    }
     params = {
-        "key": API_KEY,
         "name": player_name
     }
-    response = requests.get(BASE_URL + "player", params=params)
+    response = requests.get(BASE_URL + "v2/player", headers=headers, params=params)
     data = response.json()
 
-    if not data['success']:
-        print(f"Error: {data['cause']}")
+    if not data.get('success', False):
+        print(f"Error: {data.get('cause', 'Unknown Error')}")
         return None
 
-    return data['player']
-
+    return data.get('player')
 
 def calculate_overall_stats(stats):
     keys_to_sum = ['wins', 'losses', 'kills', 'deaths', 'final_kills', 'final_deaths', 'beds_broken', 'beds_lost']
@@ -41,7 +41,6 @@ def calculate_overall_stats(stats):
 
     return overall
 
-
 def setup_frame(frame, stats, is_overall=False):
     scroll = tk.Scrollbar(frame)
     scroll.pack(side=tk.RIGHT, fill=tk.Y)
@@ -50,20 +49,16 @@ def setup_frame(frame, stats, is_overall=False):
     scroll.config(command=text.yview)
 
     for stat, value in stats.items():
-        # For Overall tab, only show specific stats
         if is_overall:
-            if stat in ['wins', 'losses', 'kills', 'deaths', 'final_kills', 'final_deaths', 'beds_broken', 'beds_lost',
-                        'winstreak']:
+            if stat in ['wins', 'losses', 'kills', 'deaths', 'final_kills', 'final_deaths', 'beds_broken', 'beds_lost', 'winstreak']:
                 display_stat = stat.capitalize() if stat != 'winstreak' else 'Winstreak'
                 text.insert(tk.END, f"{display_stat}: {value}\n")
         else:
-            # For other tabs, show all relevant stats except winstreak which should be displayed specially
             if stat != 'winstreak':
                 display_stat = stat.replace('_bedwars', '').capitalize()
                 text.insert(tk.END, f"{display_stat}: {value}\n")
-            elif 'winstreak' in stats:  # Only if winstreak exists in the stats
+            elif 'winstreak' in stats:
                 text.insert(tk.END, f"Winstreak: {value}\n")
-
 
 def add_dream_nested_tabs(parent, stats):
     dream_tabs = ttk.Notebook(parent)
@@ -73,14 +68,11 @@ def add_dream_nested_tabs(parent, stats):
         dream_tabs.add(size_tab, text=size)
         size_nested = ttk.Notebook(size_tab)
 
-        # List of Dream modes
         dream_modes = ['rush', 'ultimate', 'lucky', 'voidless', 'armed', 'underworld', 'swap']
         for mode in dream_modes:
-            # Construct the prefix for this mode and size
             mode_prefix = f"eight_two_{mode}_" if size == 'Doubles' else f"four_four_{mode}_"
-            # Filter stats for this specific Dream mode
             mode_stats = {k.replace(mode_prefix, ''): v for k, v in stats.items() if k.startswith(mode_prefix)}
-            if mode_stats:  # Only create a tab if there are stats for this mode
+            if mode_stats:
                 frame = ttk.Frame(size_nested)
                 size_nested.add(frame, text=mode)
                 setup_frame(frame, mode_stats)
@@ -88,7 +80,6 @@ def add_dream_nested_tabs(parent, stats):
         size_nested.pack(fill=tk.BOTH, expand=True)
 
     dream_tabs.pack(fill=tk.BOTH, expand=True)
-
 
 def add_nested_tabs(parent, stats):
     nested_tabs = ttk.Notebook(parent)
@@ -99,10 +90,12 @@ def add_nested_tabs(parent, stats):
             nested_tabs.add(frame, text=mode)
             setup_frame(frame, mode_stats, is_overall=True)
         else:
-            mode_prefix = 'eight_one_' if mode == 'Solo' else \
-                         'eight_two_' if mode == 'Doubles' else \
-                         'four_three_' if mode == '3v3v3v3' else \
-                         'four_four_'
+            mode_prefix = {
+                'Solo': 'eight_one_',
+                'Doubles': 'eight_two_',
+                '3v3v3v3': 'four_three_',
+                '4v4v4v4': 'four_four_'
+            }[mode]
             mode_stats = {
                 k.replace(mode_prefix, ''): v for k, v in stats.items()
                 if k.startswith(mode_prefix) and not any(m in k for m in ['rush', 'ultimate', 'lucky', 'voidless', 'armed', 'underworld', 'swap'])
@@ -110,7 +103,6 @@ def add_nested_tabs(parent, stats):
             nested_tabs.add(frame, text=mode)
             setup_frame(frame, mode_stats)
     nested_tabs.pack(fill=tk.BOTH, expand=True)
-
 
 def display_gui():
     def show_stats():
@@ -120,8 +112,6 @@ def display_gui():
             for tab in tabs.tabs():
                 tabs.forget(tab)
             bedwars_stats = player_data.get('stats', {}).get('Bedwars', {})
-            overall_stats = calculate_overall_stats(bedwars_stats)
-
             bedwars_tab = ttk.Frame(tabs)
             dream_tab = ttk.Frame(tabs)
             tabs.add(bedwars_tab, text="BedWars")
@@ -143,9 +133,10 @@ def display_gui():
     ttk.Button(frame, text="Get Stats", command=show_stats).grid(column=2, row=0, pady=5)
 
     tabs = ttk.Notebook(frame)
-    tabs.grid(column=0, row=1, columnspan=3, pady=5)
+    tabs.grid(column=0, row=1, columnspan=3, pady=5, sticky=(tk.N, tk.S, tk.E, tk.W))
+    frame.columnconfigure(0, weight=1)
+    frame.rowconfigure(1, weight=1)
 
     root.mainloop()
-
 
 display_gui()
