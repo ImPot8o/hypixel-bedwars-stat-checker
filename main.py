@@ -2,17 +2,37 @@ import tkinter as tk
 from tkinter import ttk
 import requests
 
-API_KEY = "YOUR API KEY"
+API_KEY = "YOUR API KEY"  # app api key
 BASE_URL = "https://api.hypixel.net/"
+MOJANG_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
 
-def get_player_data(player_name):
+
+def get_uuid_from_name(player_name):
+    response = requests.get(MOJANG_API_URL + player_name)
+    if response.status_code == 200:
+        return response.json()['id']
+    elif response.status_code == 204:  # No content, player not found
+        return None
+    else:
+        print(f"Failed to get UUID. Status code: {response.status_code}")
+        return None
+
+
+def get_player_data(player_identifier):
     headers = {
         "API-Key": API_KEY
     }
-    params = {
-        "name": player_name
-    }
-    response = requests.get(BASE_URL + "v2/player", headers=headers, params=params)
+
+    # Check if the input is likely a UUID (32 characters without dashes or 36 with)
+    if len(player_identifier.replace('-', '')) == 32:
+        uuid = player_identifier.replace('-', '')
+    else:
+        uuid = get_uuid_from_name(player_identifier)
+        if uuid is None:
+            print("Could not find UUID for the given player name.")
+            return None
+
+    response = requests.get(BASE_URL + "player", headers=headers, params={'uuid': uuid})
     data = response.json()
 
     if not data.get('success', False):
@@ -106,8 +126,8 @@ def add_nested_tabs(parent, stats):
 
 def display_gui():
     def show_stats():
-        player_name = name_entry.get()
-        player_data = get_player_data(player_name)
+        player_identifier = name_entry.get()
+        player_data = get_player_data(player_identifier)
         if player_data:
             for tab in tabs.tabs():
                 tabs.forget(tab)
@@ -126,8 +146,8 @@ def display_gui():
     frame = ttk.Frame(root, padding="10")
     frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-    ttk.Label(frame, text="Enter Player IGN:").grid(column=0, row=0, sticky=tk.W, pady=5)
-    name_entry = ttk.Entry(frame, width=30)
+    ttk.Label(frame, text="Enter Player Name or UUID:").grid(column=0, row=0, sticky=tk.W, pady=5)
+    name_entry = ttk.Entry(frame, width=40)
     name_entry.grid(column=1, row=0, pady=5)
 
     ttk.Button(frame, text="Get Stats", command=show_stats).grid(column=2, row=0, pady=5)
